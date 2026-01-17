@@ -3,10 +3,10 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import bs4
-import httpx
 import questionary
 import typed_argparse as tap
 from tqdm import tqdm
+import curl_cffi
 
 from classes import Args, Thread
 from db import dump_threads, get_threads
@@ -58,7 +58,7 @@ def download(thread: Thread, unattended: bool) -> Thread:
     board = url.path.split("/")[1]
     id = url.path.split("/")[3].split(".")[0]
     path: Path = Path(f"./out/[{board}] ({id})/")
-    contents = bs4.BeautifulSoup(httpx.get(str(url)).content, "html.parser")
+    contents = bs4.BeautifulSoup(curl_cffi.get(str(url)).text, "html.parser")
 
     assert contents.title
 
@@ -102,7 +102,7 @@ def download(thread: Thread, unattended: bool) -> Thread:
         # Download files
         for file in files:
             href, location = process(path, file)
-            img_response = httpx.get(BASE + href)
+            img_response = curl_cffi.get(BASE + href)
 
             with open(location, "wb") as file:
                 _ = file.write(img_response.content)
