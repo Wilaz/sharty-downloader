@@ -58,7 +58,7 @@ def download(thread: Thread, unattended: bool) -> Thread:
     board = url.path.split("/")[1]
     id = url.path.split("/")[3].split(".")[0]
     path: Path = Path(f"./out/[{board}] ({id})/")
-    contents = bs4.BeautifulSoup(curl_cffi.get(str(url)).text, "html.parser")
+    contents = bs4.BeautifulSoup(curl_cffi.get(str(url), impersonate="chrome").text, "html.parser")
 
     assert contents.title
 
@@ -102,7 +102,7 @@ def download(thread: Thread, unattended: bool) -> Thread:
         # Download files
         for file in files:
             href, location = process(path, file)
-            img_response = curl_cffi.get(BASE + href)
+            img_response = curl_cffi.get(BASE + href, impersonate="chrome")
 
             with open(location, "wb") as file:
                 _ = file.write(img_response.content)
