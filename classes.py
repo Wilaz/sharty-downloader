@@ -2,11 +2,11 @@ from datetime import datetime
 from typing import Any, Self
 
 import typed_argparse as tap
-from pydantic_core import Url
+from pydantic import HttpUrl
 
 
 class Thread:
-    url: Url
+    url: HttpUrl
     name: str | None = None
     first_scraped: datetime | None = None
     last_scraped: datetime | None = None
@@ -30,7 +30,7 @@ class Thread:
     def from_dict(cls, dictionary: dict[str, Any], acked: bool = False) -> Self:
         assert "url" in dictionary
 
-        thread = cls(Url(dictionary["url"]), acked=acked)
+        thread = cls(HttpUrl(dictionary["url"]), acked=acked)
 
         if "name" in dictionary:
             thread.name = dictionary["name"]
@@ -43,13 +43,13 @@ class Thread:
 
         return thread
 
-    def __init__(self, url: Url, acked: bool = False) -> None:
+    def __init__(self, url: HttpUrl, acked: bool = False) -> None:
         self.url = url
         self.acked = acked
 
 
 class Args(tap.TypedArgs):
-    url: list[Url] = tap.arg(
+    url: list[HttpUrl] = tap.arg(
         positional=True,
         help="thread url",
         nargs="*",

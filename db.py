@@ -1,21 +1,22 @@
 from pathlib import Path
 from typing import Any
 
-import rtoml
+from rtoml import load, dump
 
 from classes import Thread
 from utility import get_thread_by_url
 
+THREADS = Path("./threads.toml")
 
 def get_threads() -> list[Thread]:
     return [
         Thread.from_dict(thread)
-        for thread in rtoml.load(Path("./threads.toml"))["keyed"]
+        for thread in load(THREADS)["keyed"]
     ]
 
 
 def dump_threads(new_threads: list[Thread]) -> None:
-    data = rtoml.load(Path("./threads.toml"))
+    data = load(THREADS)
     threads: list[Thread] = []
     result: dict[str, list[dict[str, Any]]] = {"keyed": [], "locked": []}
 
@@ -42,7 +43,7 @@ def dump_threads(new_threads: list[Thread]) -> None:
         else:
             result["keyed"].append(thread.to_dict())
 
-    _ = rtoml.dump(
+    _ = dump(
         {key: value for key, value in result.items() if value not in [[]]},
-        Path("./threads.toml"),
+        THREADS,
     )

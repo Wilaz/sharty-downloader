@@ -3,17 +3,16 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import bs4
-import questionary
-import typed_argparse as tap
+from questionary import confirm
+from typed_argparse import Parser
 from tqdm import tqdm
-import curl_cffi
+from curl_cffi import get
 
 from classes import Args, Thread
 from db import dump_threads, get_threads
-from utility import get_thread_by_url
+from utility import get_thread_by_url, BASE
 
 ACK = "404 - Not found"
-BASE = "https://www.soyjak.st"
 
 def process(path: Path, file) -> tuple[str, Path]:
     # Find the href attribute of the child element
@@ -58,7 +57,7 @@ def download(thread: Thread, unattended: bool) -> Thread:
     board = url.path.split("/")[1]
     id = url.path.split("/")[3].split(".")[0]
     path: Path = Path(f"./out/[{board}] ({id})/")
-    contents = bs4.BeautifulSoup(curl_cffi.get(str(url), impersonate="chrome").text, "html.parser")
+    contents = bs4.BeautifulSoup(get(str(url), impersonate="chrome").text, "html.parser")
 
     assert contents.title
 
@@ -67,7 +66,7 @@ def download(thread: Thread, unattended: bool) -> Thread:
         if unattended:
             thread.acked = True
             return thread
-        if questionary.confirm("Do you want to move it to locked?").ask():
+        if confirm("Do you want to move it to locked?").ask():
             thread.acked = True
             return thread
 
@@ -90,7 +89,7 @@ def download(thread: Thread, unattended: bool) -> Thread:
     print(f"    - {existing} existing files")
 
     if not unattended:
-        if not questionary.confirm("Do you want to continue?").ask():
+        if not confirm("Do you want to continue?").ask():
             return thread
 
     if not os.path.exists(path):
@@ -102,7 +101,7 @@ def download(thread: Thread, unattended: bool) -> Thread:
         # Download files
         for file in files:
             href, location = process(path, file)
-            img_response = curl_cffi.get(BASE + href, impersonate="chrome")
+            img_response = get(BASE + href, impersonate="chrome")
 
             with open(location, "wb") as file:
                 _ = file.write(img_response.content)
@@ -136,7 +135,7 @@ def runner(args: Args) -> None:
         if get_thread_by_url(url, threads_existing) is None:
             threads_process.append(Thread(url))
         else:
-            thread: Thread = get_thread_by_url(url, threads_existing)
+            thread = get_thread_by_url(url, threads_existing)
             threads_process.append(thread)
             threads_existing.remove(thread)
 
@@ -150,4 +149,4 @@ def runner(args: Args) -> None:
 
 
 if __name__ == "__main__":
-    tap.Parser(Args).bind(runner).run()
+    Parser(Args).bind(runner).run()
